@@ -5,10 +5,10 @@ Simple python interface for mlmorph using sfst
 """
 
 from importlib import resources
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import regex
-import sfst
+import sfst  # ty: ignore[unresolved-import]
 
 from .foreign_word_detector import check_foreign_word
 from .normalizer import normalize
@@ -22,9 +22,9 @@ class Analyser:
 
     def __init__(self):
         """Construct Mlmorph Analyser"""
-        self.fsa: str = None
+        self.fsa: str | None = None
         if resources.files('mlmorph').joinpath(Analyser.RESOURCE_PATH).is_file():
-            self.fsa: str = str(resources.files('mlmorph').joinpath(Analyser.RESOURCE_PATH))
+            self.fsa = str(resources.files('mlmorph').joinpath(Analyser.RESOURCE_PATH))
         if not self.fsa:
             raise ValueError("Could not read the fsa.")
         sfst.init(self.fsa)
@@ -32,7 +32,7 @@ class Analyser:
 
     def analyse(
         self, word: str, weighted: bool = True, foreign_word_check: bool = True
-    ) -> List[Tuple[str, int]]:
+    ) -> List[str] | List[Tuple[str, int]]:
         """
         Perform a simple morphological analysis lookup.
 
@@ -116,7 +116,7 @@ class Analyser:
         return result
 
     @staticmethod
-    def get_weight(analysis: str) -> int:
+    def get_weight(analysis: List[dict[str, Any]]) -> int:
         """Analysis with less weight is the best analysis."""
         morpheme_length = len(analysis)
         weight = morpheme_length * 100
