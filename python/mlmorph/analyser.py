@@ -15,7 +15,6 @@ from .normalizer import normalize
 
 
 class Analyser:
-
     ANALYSER_REGEX = regex.compile(r"((?P<root>([^<])+)(?P<tags>(<[^>]+>)+))+")
     POS_REGEX = regex.compile(r"(<(?P<tag>([^>]+))>)+")
     RESOURCE_PATH = "data/malayalam.a"
@@ -23,12 +22,11 @@ class Analyser:
     def __init__(self):
         """Construct Mlmorph Analyser"""
         self.fsa: str | None = None
-        if resources.files('mlmorph').joinpath(Analyser.RESOURCE_PATH).is_file():
-            self.fsa = str(resources.files('mlmorph').joinpath(Analyser.RESOURCE_PATH))
+        if resources.files("mlmorph").joinpath(Analyser.RESOURCE_PATH).is_file():
+            self.fsa = str(resources.files("mlmorph").joinpath(Analyser.RESOURCE_PATH))
         if not self.fsa:
             raise ValueError("Could not read the fsa.")
         sfst.init(self.fsa)
-
 
     def analyse(
         self, word: str, weighted: bool = True, foreign_word_check: bool = True
@@ -127,9 +125,7 @@ class Analyser:
                 # In general, favor simplicity
                 # Prefer analysis with less number of tags
                 # Prefer analysis with small length roots
-                weight += (
-                    len(pos) * 5 + len(root) * 2 + Analyser.get_pos_weight(pos[j]) * 3
-                )
+                weight += len(pos) * 5 + len(root) * 2 + Analyser.get_pos_weight(pos[j]) * 3
         return weight
 
     @staticmethod

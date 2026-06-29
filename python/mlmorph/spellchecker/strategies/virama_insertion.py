@@ -8,17 +8,16 @@ class ViramaInsertion(SuggestionStrategy):
 
     def suggest(self, word):
         start = 1
-        for i in range(start, len(word)-1):
+        for i in range(start, len(word) - 1):
             candidate = list(word)
-            prev = candidate[i-1]
+            prev = candidate[i - 1]
             char = candidate[i]
-            next = candidate[i+1]
-            if prev == '\u0D4D' or next == '\u0D4D':  # Virama
-                i = i+1
+            next = candidate[i + 1]
+            if prev == "\u0d4d" or next == "\u0d4d":  # Virama
+                i = i + 1
                 continue
             if self.isConsonant(char) and self.isConsonant(next):
-                candidate[i] = char + '\u0D4D'
-                yield ''.join(candidate)
-                i = i+1
+                candidate[i] = char + "\u0d4d"
+                yield "".join(candidate)
+                i = i + 1
                 continue
-

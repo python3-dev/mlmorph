@@ -13,7 +13,7 @@ def read_common_mistakes():
     """
     mistakes = {}
     mistakes_file = pkgutil.get_data(__name__, "resources/common_mistakes.csv")
-    reader = csv.DictReader(mistakes_file.decode('utf-8').splitlines(), delimiter=",")
+    reader = csv.DictReader(mistakes_file.decode("utf-8").splitlines(), delimiter=",")
     for row in reader:
-        mistakes[row['word']] = row['correct']
+        mistakes[row["word"]] = row["correct"]
     return mistakes

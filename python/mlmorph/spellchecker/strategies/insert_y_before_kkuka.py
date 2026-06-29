@@ -7,9 +7,9 @@ class Ykkuka(SuggestionStrategy):
     """
 
     def suggest(self, word):
-        candidate = word.replace('ക്കുക', 'യ്ക്കുക')
+        candidate = word.replace("ക്കുക", "യ്ക്കുക")
         if candidate != word:
             yield candidate
-        candidate = word.replace('ക്കൽ', 'യ്ക്കൽ')
+        candidate = word.replace("ക്കൽ", "യ്ക്കൽ")
         if candidate != word:
-           yield candidate
+            yield candidate

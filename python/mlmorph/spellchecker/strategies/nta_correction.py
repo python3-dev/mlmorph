@@ -7,9 +7,9 @@ class NtaCorrection(SuggestionStrategy):
     """
 
     def suggest(self, word):
-        candidate = word.replace('ൻറ', 'ന്റ')
+        candidate = word.replace("ൻറ", "ന്റ")
         if candidate != word:
             yield candidate
-        candidate = word.replace('ൻ്റ', 'ന്റ')
+        candidate = word.replace("ൻ്റ", "ന്റ")
         if candidate != word:
             yield candidate

@@ -5,13 +5,8 @@ class VowelShortening(SuggestionStrategy):
     """
     Implement the algorithm using the Strategy interface.
     """
-    shortening_map = {
-        'ാ': '',
-        'ീ': 'ി',
-        'ൂ': 'ു',
-        'േ': 'െ',
-        'ോ': 'ൊ'
-    }
+
+    shortening_map = {"ാ": "", "ീ": "ി", "ൂ": "ു", "േ": "െ", "ോ": "ൊ"}
 
     def suggest(self, word):
         start = 1
@@ -20,6 +15,6 @@ class VowelShortening(SuggestionStrategy):
             char = candidate[i]
             if char in self.shortening_map:
                 candidate[i] = self.shortening_map[char]
-                start = i+1
-                yield ''.join(candidate)
+                start = i + 1
+                yield "".join(candidate)
                 continue

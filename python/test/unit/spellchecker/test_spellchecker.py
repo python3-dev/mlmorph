@@ -1,4 +1,5 @@
-""" Unittest class """
+"""Unittest class"""
+
 from __future__ import division, unicode_literals
 
 import unittest
@@ -8,7 +9,7 @@ from mlmorph.spellchecker import SpellChecker
 
 class SpellCheckerTests(unittest.TestCase):
     def test_correction(self):
-        """ test spell checker corrections """
+        """test spell checker corrections"""
         spell = SpellChecker()
         self.assertTrue(spell.spellcheck("മലയാളം"))
         self.assertTrue(spell.spellcheck("മലയാളത്തിൽ"))
@@ -17,14 +18,13 @@ class SpellCheckerTests(unittest.TestCase):
         self.assertTrue(spell.spellcheck("മലയാളത്തിനായി"))
         self.assertTrue(spell.spellcheck("ഇലക്ട്രിസിഫിക്കേഷൻ"))
 
-
     def test_mistake(self):
-        """ test spell checker mistakes """
+        """test spell checker mistakes"""
         spell = SpellChecker()
         self.assertFalse(spell.spellcheck("ദുഖം"))
 
     def test_candidates(self):
-        """ test spell checker candidates """
+        """test spell checker candidates"""
         spell = SpellChecker()
         self.assertEqual(spell.candidates("ദുഖം"), ["ദുഃഖം"])
         self.assertEqual(spell.candidates("അങ്ങിനെ"), ["അങ്ങനെ"])
