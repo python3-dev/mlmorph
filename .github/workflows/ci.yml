@@ -12,7 +12,7 @@ jobs:
     name: Build FSTs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install FST compiler and locale tools
         run: |
@@ -24,7 +24,7 @@ jobs:
         run: make malayalam.a
 
       - name: Upload compiled FSA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: malayalam-fsa
           path: malayalam.a
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install FST tools, Python and locale tools
         run: |
@@ -45,7 +45,7 @@ jobs:
           sudo locale-gen ml_IN.UTF-8
 
       - name: Download compiled FSA
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: malayalam-fsa
 
@@ -73,10 +73,10 @@ jobs:
           - "3.14"
           - "3.14t"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           # Needed for 3.14 until it graduates from pre-release, and for *t builds
@@ -94,7 +94,7 @@ jobs:
       - name: Place compiled FSA in package data directory
         run: mkdir -p python/mlmorph/data
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: malayalam-fsa
           path: python/mlmorph/data/
@@ -110,9 +110,9 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
