@@ -1,19 +1,23 @@
 import csv
 import pkgutil
 
-""" Additional utility functions """
 
-
-def read_common_mistakes():
+def read_common_mistakes() -> dict[str, str]:
     """
-    Read the common mistakes database
+    Load the common-mistakes database bundled with the package.
 
-    Returns:
-        Dict: Dict with keys as the words and value as correction
+    Returns
+    -------
+    dict[str, str]
+        Mapping of misspelled word to its correct form.
+
+    Raises
+    ------
+    RuntimeError
+        If the bundled CSV resource cannot be read.
     """
-    mistakes = {}
-    mistakes_file = pkgutil.get_data(__name__, "resources/common_mistakes.csv")
-    reader = csv.DictReader(mistakes_file.decode("utf-8").splitlines(), delimiter=",")
-    for row in reader:
-        mistakes[row["word"]] = row["correct"]
-    return mistakes
+    data = pkgutil.get_data(__name__, "resources/common_mistakes.csv")
+    if data is None:
+        raise RuntimeError("Could not load common_mistakes.csv resource")
+    reader = csv.DictReader(data.decode("utf-8").splitlines(), delimiter=",")
+    return {row["word"]: row["correct"] for row in reader}

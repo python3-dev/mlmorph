@@ -1,8 +1,12 @@
+from collections.abc import Iterator
+
 from .suggestion_strategy import SuggestionStrategy
 
 
 class PhoneticSimilarity(SuggestionStrategy):
-    def suggest(self, word):
+    """Replace phonetically confusable consonants and consonant clusters."""
+
+    def suggest(self, word: str) -> Iterator[str]:
         confusables = ["കഖഗഘ", "ചഛജഝ", "ടഠഡഢ", "തഥദധ", "പഫബഭ", "രറ", "ലള", "ശഷസ"]
         for confusable in confusables:
             candidates = self.getCandidatesWithReplacements(word, confusable)

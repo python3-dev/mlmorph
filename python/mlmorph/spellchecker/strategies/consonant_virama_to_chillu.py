@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from .suggestion_strategy import SuggestionStrategy
 
 
@@ -8,7 +10,7 @@ class ConsonantViramaToChillu(SuggestionStrategy):
 
     conversion_map = {"ര്": "ർ", "റ്": "ർ", "ല്": "ൽ", "ന്": "ൻ", "ണ്": "ൺ", "ള്": "ൾ", "മ്": "ം"}
 
-    def suggest(self, word):
+    def suggest(self, word: str) -> Iterator[str]:
         start = 2
         for i in range(start, len(word) - 1):
             candidate = list(word)

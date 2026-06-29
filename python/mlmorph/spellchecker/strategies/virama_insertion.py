@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from .suggestion_strategy import SuggestionStrategy
 
 
@@ -6,7 +8,7 @@ class ViramaInsertion(SuggestionStrategy):
     Insert virama between two adjacent consonants. അദധ്വാനം -> അദ്ധ്വാനം
     """
 
-    def suggest(self, word):
+    def suggest(self, word: str) -> Iterator[str]:
         start = 1
         for i in range(start, len(word) - 1):
             candidate = list(word)

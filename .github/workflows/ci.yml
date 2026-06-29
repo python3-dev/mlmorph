@@ -85,8 +85,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y sfst
 
-      # Place the FSA where pyproject.toml package-data expects it before tox
-      # runs `python -m build` (isolated_build = true) so it ends up in the wheel.
+      # Place the FSA where hatchling package data expects it before running tests.
       - name: Place compiled FSA in package data directory
         run: mkdir -p python/mlmorph/data
 
@@ -95,11 +94,16 @@ jobs:
           name: malayalam-fsa
           path: python/mlmorph/data/
 
-      - name: Install tox
-        run: pip install tox
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install package with test dependencies
+        run: uv pip install -e ".[tests]"
+        working-directory: python
 
       - name: Run unit tests
-        run: tox -e unit -c python/tox.ini
+        run: uv run pytest test/unit/ -v
+        working-directory: python
 
   # ── Stage 2c: Lint ──────────────────────────────────────────────────────────
   lint:
@@ -112,8 +116,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install tox
-        run: pip install tox
+      - name: Install ruff
+        run: pip install ruff
 
-      - name: Run ruff via tox
-        run: tox -e lint -c python/tox.ini
+      - name: Run lint
+        working-directory: python
+        run: |
+          ruff check .
+          ruff format --check .

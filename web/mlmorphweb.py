@@ -1,10 +1,9 @@
 import regex
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
-from mlmorph import Generator, Analyser
-from mlmorph.spellchecker import SpellChecker
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-import uvicorn
+from mlmorph import Analyser, Generator
+from mlmorph.spellchecker import SpellChecker
 
 app = FastAPI()
 
@@ -87,5 +86,4 @@ async def do_spellcheck(request: Request):
 app.mount("/", StaticFiles(directory="public", html=True), name="static")
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Run with: granian --interface asgi mlmorphweb:app --host 0.0.0.0 --port 8000

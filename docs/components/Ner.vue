@@ -15,9 +15,7 @@
 </template>
 
 <script>
-import axios from "axios";
 import { ref, onMounted } from "vue";
-
 
 export default {
   name: "Ner",
@@ -41,17 +39,17 @@ export default {
           if (entity.length > 1) {
             entities[entity] = {};
           }
-          // For now, take only first analysis
           if (i >= 1) break;
         }
       }
       return entities;
     };
 
-    const getWikiInfo = (title) => {
-      return axios
-        .get(`https://ml.wikipedia.org/api/rest_v1/page/summary/${title}`)
-        .then((res) => res.data);
+    const getWikiInfo = async (title) => {
+      const response = await fetch(
+        `https://ml.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
+      );
+      return response.json();
     };
 
     const findEntity = (result) => {
@@ -64,45 +62,37 @@ export default {
       return false;
     };
 
-    const ner = () => {
+    const ner = async () => {
       entities.value = [];
-      const api = `/api/analyse`;
       loading.value = true;
-      return axios
-        .post(api, {
-          text: input.value,
-        })
-        .then((response) => {
-          const results = process(response.data.result);
-          for (var entity in results) {
-            getWikiInfo(entity)
-              .then((pageInfo) => {
-                if (
-                  pageInfo.title &&
-                  pageInfo.title.trim() &&
-                  pageInfo.thumbnail
-                )
-                  entities.value.push(pageInfo);
-                loading.value = false;
-              })
-              .catch((error) => {
-                // eslint-disable-next-line no-console
-                // pass if no wiki info found
-              });
-          }
-        })
-        .catch((error) => {
-          // eslint-disable-next-line no-console
-          console.log(error);
-          loading.value = false;
+      try {
+        const response = await fetch("/api/analyse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: input.value }),
         });
+        const data = await response.json();
+        const results = process(data.result);
+        for (var entity in results) {
+          try {
+            const pageInfo = await getWikiInfo(entity);
+            if (pageInfo.title && pageInfo.title.trim() && pageInfo.thumbnail) {
+              entities.value.push(pageInfo);
+            }
+          } catch {
+            // pass if no wiki info found
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        loading.value = false;
+      }
     };
 
     onMounted(() => {
-      import('https://santhoshtr.github.io/wiki-elements/src/wiki-article.js').then((module) => {
-        // use code
-      })
-    })
+      import('https://santhoshtr.github.io/wiki-elements/src/wiki-article.js');
+    });
 
     return {
       loading,

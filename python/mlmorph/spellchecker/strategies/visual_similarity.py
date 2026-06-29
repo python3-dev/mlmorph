@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from .suggestion_strategy import SuggestionStrategy
 
 
@@ -27,7 +29,7 @@ class VisualSimilarity(SuggestionStrategy):
         "്രു": "ൃ",  # Replace ്ര with ൃ - ഹ്രുദയം - ഹൃദയം
     }
 
-    def suggest(self, word):
+    def suggest(self, word: str) -> Iterator[str]:
         for key in self.conversion_map:
             candidate = word.replace(key, self.conversion_map[key])
             if candidate != word:
