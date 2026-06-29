@@ -5,9 +5,9 @@ Simple python interface for mlmorph using sfst
 """
 
 from importlib import resources
-from typing import Tuple
+from typing import List, Tuple
 
-import sfst
+import sfst  # ty: ignore[unresolved-import]
 
 from .analyser import Analyser
 from .normalizer import normalize
@@ -18,9 +18,9 @@ class Generator:
 
     def __init__(self):
         """Construct Mlmorph Generator"""
-        self.fsa: str = None
+        self.fsa: str | None = None
         if resources.files('mlmorph').joinpath(Generator.RESOURCE_PATH).is_file():
-            self.fsa: str = str(resources.files('mlmorph').joinpath(Analyser.RESOURCE_PATH))
+            self.fsa: str = str(resources.files('mlmorph').joinpath(Generator.RESOURCE_PATH))
         if not self.fsa:
             raise ValueError('Could not read the fsa.')
         sfst.init(self.fsa)
@@ -43,7 +43,7 @@ class Generator:
                 return weight+i
         return weight+len(generated_word)
 
-    def generate(self, token: str, weighted: bool = True) -> Tuple:
+    def generate(self, token: str, weighted: bool = True) -> List[Tuple[str, int]] | Tuple:
         """Perform a simple morphological generator lookup."""
         token = normalize(token)
         generated_results = sfst.generate(token)
@@ -57,4 +57,3 @@ class Generator:
             processed_result.append(
                 (generated_results[gindex], generated_result_weight))
         return sorted(processed_result, key=lambda tup: tup[1])
-
