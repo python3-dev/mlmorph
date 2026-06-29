@@ -98,11 +98,11 @@ jobs:
         run: pip install uv
 
       - name: Install package with test dependencies
-        run: uv pip install -e ".[tests]"
+        run: uv pip install --system -e ".[tests]"
         working-directory: python
 
       - name: Run unit tests
-        run: uv run pytest test/unit/ -v
+        run: pytest test/unit/ -v
         working-directory: python
 
   # ── Stage 2c: Lint ──────────────────────────────────────────────────────────

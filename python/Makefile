@@ -1,7 +1,7 @@
 all:
 	@mkdir -p mlmorph/data
 	cp ../malayalam.a mlmorph/data/malayalam.a
-	uv sync --extra tests --extra dev
+	pip install -e '.[tests]'
 
 test:
 	uv run pytest test/unit/ -v
