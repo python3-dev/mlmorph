@@ -94,11 +94,8 @@ jobs:
           name: malayalam-fsa
           path: python/mlmorph/data/
 
-      - name: Install uv
-        run: pip install uv
-
       - name: Install package with test dependencies
-        run: uv pip install --system -e ".[tests]"
+        run: pip install -e ".[tests]"
         working-directory: python
 
       - name: Run unit tests
