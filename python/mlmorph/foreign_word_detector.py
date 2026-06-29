@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import re
+import regex
 
 ENGLISH_PATTERNS = [
     "\\S+[അ-ഔ]\\S+",
@@ -161,24 +161,26 @@ ENGLISH_PATTERNS = [
     "[0-9]+",
 ]
 
-compiled_english_pattern_regex = re.compile("|".join(ENGLISH_PATTERNS))
+compiled_english_pattern_regex = regex.compile("|".join(ENGLISH_PATTERNS))
 
 
 def check_foreign_word(word: str) -> int:
     """
-    Check if the word is foreign word or not
+    Detect whether a word is foreign (non-native Malayalam).
 
-    Args
-    ----
-        word : str, word to check whether it is foreign word or not
+    Parameters
+    ----------
+    word : str
+        The word to check.
 
     Returns
     -------
-        int : A score between 0 and 1
+    int
+        1 if the word is foreign, 0 if it appears to be native Malayalam.
     """
     word = word.strip()
     # Remove all ZWS, ZWNJ, ZWJ before pattern matching
-    word = re.sub(r"[\u200B-\u200D]", "", word)
+    word = regex.sub(r"[​-‍]", "", word)
     if not is_valid_malayalam_word(word):
         # Unknown word. Surely foreign
         return 1
@@ -188,13 +190,39 @@ def check_foreign_word(word: str) -> int:
 
 
 def has_sure_patterns(word: str) -> bool:
-    return re.search(compiled_english_pattern_regex, word)
+    """
+    Check whether the word matches any known foreign-word pattern.
+
+    Parameters
+    ----------
+    word : str
+        The word to check.
+
+    Returns
+    -------
+    bool
+        True if a foreign pattern is found, False otherwise.
+    """
+    return regex.search(compiled_english_pattern_regex, word) is not None
 
 
 def is_valid_malayalam_word(word: str) -> bool:
+    """
+    Return True if the word contains valid Malayalam Unicode characters.
+
+    Parameters
+    ----------
+    word : str
+        The word to validate.
+
+    Returns
+    -------
+    bool
+        True if the word is a valid Malayalam word candidate, False otherwise.
+    """
     if len(word) <= 1:
         return False
     # Ignore all non-Malayalam words
-    if re.search(r"[\u0D00-\u0D7F\u200C-\u200D]+", word) is None:
+    if regex.search(r"[ഀ-ൿ‌-‍]+", word) is None:
         return False
     return True

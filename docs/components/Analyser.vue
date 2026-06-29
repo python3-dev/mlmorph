@@ -40,7 +40,6 @@
 </template>
 
 <script>
-import axios from "axios";
 import tags from "../../tags.json";
 import { ref } from "vue";
 
@@ -48,46 +47,46 @@ export default {
   name: "Analyser",
 
   setup() {
-    const input=ref("ഇന്നലെയും മലപ്പുറത്ത് നല്ല മഴ പെയ്തിരുന്നു. കുട്ടികൾ സ്കൂളിൽ പോയില്ല");
-    const analysis=ref({});
-    const loading=ref(false);
+    const input = ref("ഇന്നലെയും മലപ്പുറത്ത് നല്ല മഴ പെയ്തിരുന്നു. കുട്ടികൾ സ്കൂളിൽ പോയില്ല");
+    const analysis = ref({});
+    const loading = ref(false);
 
     const getTag = (pos) => {
       return tags.find(item => item.id === pos) || { tag: pos };
     };
 
-    const analyse = () => {
-      const api = `/api/analyse`;
+    const analyse = async () => {
       const words = input.value.split(new RegExp(/\s/));
       analysis.value = {};
       loading.value = true;
-      axios
-        .post(api, {
-          text: input.value
-        })
-        .then(response => {
-          const results = response.data.result;
-        const resultObj={}
-          for (let i = 0; i < words.length; i++) {
-           resultObj[words[i]] = results[words[i]];
-          }
-           analysis.value = resultObj;
-          loading.value = false;
-        })
-        .catch(error => {
-          // eslint-disable-next-line no-console
-          console.log(error);
-          loading.value = false;
+      try {
+        const response = await fetch("/api/analyse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: input.value }),
         });
-    }
+        const data = await response.json();
+        const results = data.result;
+        const resultObj = {};
+        for (let i = 0; i < words.length; i++) {
+          resultObj[words[i]] = results[words[i]];
+        }
+        analysis.value = resultObj;
+      } catch (error) {
+        console.log(error);
+      } finally {
+        loading.value = false;
+      }
+    };
+
     return {
-        loading,
-        input,
-        getTag,
-        analyse,
-        analysis
-    }
-  }
+      loading,
+      input,
+      getTag,
+      analyse,
+      analysis,
+    };
+  },
 };
 </script>
 <style>

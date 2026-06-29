@@ -12,41 +12,36 @@
 </template>
 
 <script>
-import axios from "axios";
 import { ref } from "vue";
 
 export default {
   name: "Generator",
 
   setup() {
-    const input=ref("പഞ്ചസാര<n><adj>മണൽ<n><adj>തരി<n><pl><locative>ഉം<cnj>ആണ്<aff>");
-    const results=ref('');
-    const loading=ref(false);
+    const input = ref("പഞ്ചസാര<n><adj>മണൽ<n><adj>തരി<n><pl><locative>ഉം<cnj>ആണ്<aff>");
+    const results = ref('');
+    const loading = ref(false);
 
-    const generate = () => {
-      const api = `/api/generate?word=${input.value}`;
+    const generate = async () => {
       loading.value = true;
-      axios
-        .get(api, {
-          text: input.value
-        })
-        .then(response => {
-          results.value = response.data.result;
-          loading.value = false;
-        })
-        .catch(error => {
-          // eslint-disable-next-line no-console
-          console.log(error);
-          loading.value = false;
-        });
-    }
+      try {
+        const response = await fetch(`/api/generate?word=${encodeURIComponent(input.value)}`);
+        const data = await response.json();
+        results.value = data.result;
+      } catch (error) {
+        console.log(error);
+      } finally {
+        loading.value = false;
+      }
+    };
+
     return {
-        loading,
-        input,
-        generate,
-        results
-    }
-  }
+      loading,
+      input,
+      generate,
+      results,
+    };
+  },
 };
 </script>
 <style>

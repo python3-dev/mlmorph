@@ -1,143 +1,171 @@
 """
-Define a family of algorithms, encapsulate each one, and make them
-interchangeable. Strategy lets the algorithm vary independently from
-clients that use it.
+Spelling checker for Malayalam based on mlmorph morphological analysis.
+
+Uses a family of correction strategies — each encapsulates one algorithm for
+generating candidate corrections. Strategies are tried in priority order; the
+best morphologically valid candidate is returned first.
 """
 
-from __future__ import absolute_import
-
-import importlib
+from typing import cast
 
 from mlmorph import Analyser
 
-from .suggestion import Suggestion
+from .strategies import (
+    ChilluNormalization,
+    ChilluToConsonantVirama,
+    ConsonantViramaToChillu,
+    GeminateConsonants,
+    MpaCorrection,
+    NtaCorrection,
+    PhoneticSimilarity,
+    ViramaInsertion,
+    VisualSimilarity,
+    VowelElongation,
+    VowelShortening,
+    Ykkuka,
+)
 from .utils import read_common_mistakes
 
+# Order is significant: higher-priority corrections are tried first.
+_STRATEGY_CLASSES = [
+    ChilluNormalization,
+    Ykkuka,
+    NtaCorrection,
+    MpaCorrection,
+    VisualSimilarity,
+    PhoneticSimilarity,
+    GeminateConsonants,
+    ViramaInsertion,
+    VowelElongation,
+    VowelShortening,
+    ChilluToConsonantVirama,
+    ConsonantViramaToChillu,
+]
 
-class SpellChecker(object):
+
+class SpellChecker:
     """
-    The SpellChecker class implements a spelling specker based on Malayalam
-    morphology analyser(mlmorph)
+    Malayalam spell checker backed by morphological analysis.
+
+    Uses mlmorph to validate candidate words and a prioritised list of
+    correction strategies to generate suggestions for misspelled words.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.analyser = Analyser()
         self.common_mistakes = read_common_mistakes()
 
-    def strategies(self):
-        return [
-            "ChilluNormalization",
-            "Ykkuka",
-            "NtaCorrection",
-            "MpaCorrection",
-            "VisualSimilarity",
-            "PhoneticSimilarity",
-            "GeminateConsonants",
-            "ViramaInsertion",
-            "VowelElongation",
-            "VowelShortening",
-            "ChilluToConsonantVirama",
-            "ConsonantViramaToChillu",
-        ]
-
-    def candidates_from_strategies(self, word: str) -> list:
+    def candidates_from_strategies(self, word: str) -> list[str]:
         """
-        Generate possible spelling corrections for the provided word using different strategies
+        Generate spelling corrections using all registered strategies.
 
-        Args:
-            word (str): The word for which to calculate candidate spellings
-        Returns:
-            list: The list of words that are possible candidates. \
-                The list is sorted in descending order of candidate scrores. \
-                Best candidates are the first candidates in the list.
+        Parameters
+        ----------
+        word : str
+            The misspelled word.
+
+        Returns
+        -------
+        list[str]
+            Candidate corrections sorted by ascending morphological weight
+            (best candidate first). Falls back to word-split candidates when
+            no single-word correction is found.
         """
-        # Order of the items in STRATEGIES is important
-        STRATEGIES = self.strategies()
-
-        weighted_suggestions = {}
-        for class_name in STRATEGIES:
-            strategy = getattr(
-                importlib.import_module("mlmorph.spellchecker.strategies"), class_name
-            )()
-            candidates = Suggestion(strategy).suggest(word)
-            for candidate in candidates:
+        weighted_suggestions: dict[str, int] = {}
+        for strategy_class in _STRATEGY_CLASSES:
+            for candidate in strategy_class().suggest(word):
                 if candidate in weighted_suggestions:
                     continue
-                weighted_analysis = self.analyser.analyse(candidate, True, False)
+                weighted_analysis = cast(
+                    list[tuple[str, int]], self.analyser.analyse(candidate, True, False)
+                )
                 if len(weighted_analysis) > 0:
                     weighted_suggestions[candidate] = weighted_analysis[0][1]
 
-        # Sort by the increasing order of weights
-        suggestions = sorted(weighted_suggestions.items(), key=lambda t: t[1])
+        suggestions: list[tuple[str, int]] = sorted(
+            weighted_suggestions.items(), key=lambda t: t[1]
+        )
         if len(suggestions) == 0:
-            # No suggestions. Try splitting the word after 3rd letter
+            # No single-word correction found; try splitting after the 3rd character.
             for index in range(3, len(word) - 3):
-                lWord = word[:index]
-                rWord = word[index:]
-                lAnalysis = self.analyser.analyse(lWord, False)
-                rAnalysis = self.analyser.analyse(rWord, False)
-                if len(lAnalysis) > 0 and len(rAnalysis) > 0:
-                    suggestions.append([lWord + " " + rWord])
+                l_word = word[:index]
+                r_word = word[index:]
+                if self.analyser.analyse(l_word, False) and self.analyser.analyse(r_word, False):
+                    suggestions.append((l_word + " " + r_word, 0))
                     break
-        # Return the words array
+
         return [suggestion[0] for suggestion in suggestions]
 
     def is_known_to_analyser(self, word: str) -> bool:
         """
-        Check if the given word is known for the mlmorph analyser
+        Return True if the analyser recognises the word.
 
-        Args:
-            word (str): The word for which to calculate candidate spellings
-        Returns:
-            boolean: Whether the word is known
+        Parameters
+        ----------
+        word : str
+            Word to check.
+
+        Returns
+        -------
+        bool
+            True if the word has at least one morphological analysis.
         """
-        analysis = self.analyser.analyse(word, False, True)
-        return len(analysis) > 0
+        return len(self.analyser.analyse(word, False, True)) > 0
 
     def is_common_mistake(self, word: str) -> bool:
         """
-        Check if the given word is a commonly mistaken word based on our
-        database of such words
+        Return True if the word appears in the common-mistakes database.
 
-        Args:
-            word (str): The word for which to calculate candidate spellings
-        Returns:
-            boolean: Whether the word is known
+        Parameters
+        ----------
+        word : str
+            Word to check.
+
+        Returns
+        -------
+        bool
+            True if the word is a known common misspelling.
         """
-
         return word in self.common_mistakes
 
     def spellcheck(self, word: str) -> bool:
         """
-        Spellcheck the given word
-        Args:
-            word (str): The word to spell check
-        Returns:
-            boolean: True if words is spelled correctly. False, otherwise.
+        Return True if the word is spelled correctly.
+
+        Parameters
+        ----------
+        word : str
+            Word to spell-check.
+
+        Returns
+        -------
+        bool
+            True if the word is not a common mistake and is known to the analyser.
         """
-        common_mistake = self.is_common_mistake(word)
-        if common_mistake:
+        if self.is_common_mistake(word):
             return False
         return self.is_known_to_analyser(word)
 
-    def candidates(self, word: str) -> list:
+    def candidates(self, word: str) -> list[str]:
         """
-        Generate possible spelling corrections for the provided word
+        Return spelling correction candidates for a misspelled word.
 
-        Args:
-            word (str): The word for which to calculate candidate spellings
-        Returns:
-            list: The list of words that are possible candidates. \
-                The list is sorted in descending order of candidate scrores.\
-                Best candidates are the first candidates in the list
+        Parameters
+        ----------
+        word : str
+            The word to correct.
+
+        Returns
+        -------
+        list[str]
+            Candidate corrections, best first. Empty list if the word is
+            already correct.
         """
         if self.spellcheck(word):
-            # Word is spelled correctly
             return []
-        common_mistake = self.is_common_mistake(word)
-        if common_mistake:
-            return [self.common_mistakes.get(word)]
+        if self.is_common_mistake(word):
+            return [self.common_mistakes.get(word, word)]
         return self.candidates_from_strategies(word)
 
 
-__all__ = [SpellChecker]
+__all__ = ["SpellChecker"]

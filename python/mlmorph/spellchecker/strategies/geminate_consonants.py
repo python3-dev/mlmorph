@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from .suggestion_strategy import SuggestionStrategy
 
 
@@ -7,7 +9,7 @@ class GeminateConsonants(SuggestionStrategy):
     adjacent virama പച്ചതത്ത -> പച്ചത്തത്ത
     """
 
-    def suggest(self, word):
+    def suggest(self, word: str) -> Iterator[str]:
         start = 1
         for i in range(start, len(word) - 1):
             candidate = list(word)

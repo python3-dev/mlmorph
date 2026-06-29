@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 
-"""
-Simple python interface for mlmorph using sfst
-"""
-
 from importlib import resources
-from typing import Any, List, Tuple
+from typing import Any
 
 import regex
 import sfst  # ty: ignore[unresolved-import]
@@ -19,8 +15,8 @@ class Analyser:
     POS_REGEX = regex.compile(r"(<(?P<tag>([^>]+))>)+")
     RESOURCE_PATH = "data/malayalam.a"
 
-    def __init__(self):
-        """Construct Mlmorph Analyser"""
+    def __init__(self) -> None:
+        """Construct Mlmorph Analyser."""
         self.fsa: str | None = None
         if resources.files("mlmorph").joinpath(Analyser.RESOURCE_PATH).is_file():
             self.fsa = str(resources.files("mlmorph").joinpath(Analyser.RESOURCE_PATH))
@@ -30,68 +26,67 @@ class Analyser:
 
     def analyse(
         self, word: str, weighted: bool = True, foreign_word_check: bool = True
-    ) -> List[str] | List[Tuple[str, int]]:
+    ) -> list[str] | list[tuple[str, int]]:
         """
-        Perform a simple morphological analysis lookup.
+        Perform a morphological analysis lookup.
 
         Parameters
         ----------
-
-        - word : The word to analyse
-        - weighted : Return result with analyser weights. Default: True,
-        - foreign_word_check: Use foreign word detector. Default: True
+        word : str
+            The word to analyse.
+        weighted : bool, optional
+            Return results with analyser weights. Default is True.
+        foreign_word_check : bool, optional
+            Apply the foreign-word detector to words with no analysis. Default is True.
 
         Returns
         -------
-        Array of tuples with analysis string and weight
+        list[str] | list[tuple[str, int]]
+            When weighted is False, a list of raw analysis strings.
+            When weighted is True, a list of (analysis, weight) tuples sorted
+            by ascending weight (best analysis first).
         """
         word = normalize(word)
         analysis_results = sfst.analyse(word)
         if not len(analysis_results):
             if foreign_word_check and check_foreign_word(word):
-                if weighted:
-                    analysis_results = [word + "<fw>"]
-                else:
-                    analysis_results = [word + "<fw>"]
+                analysis_results = [word + "<fw>"]
 
         if not weighted:
             return analysis_results
 
         processed_result = []
-        for aindex in range(len(analysis_results)):
-            weight = 0
-            analysis = analysis_results[aindex]
-            if weighted:
-                parsed_result = Analyser.parse_analysis(analysis)
-                weight = parsed_result["weight"]
-            processed_result.append((analysis, weight))
+        for analysis in analysis_results:
+            parsed_result = Analyser.parse_analysis(analysis)
+            processed_result.append((analysis, parsed_result["weight"]))
 
         return sorted(processed_result, key=lambda tup: tup[1])
 
     @staticmethod
-    def parse_analysis(analysis: str) -> dict:
+    def parse_analysis(analysis: str) -> dict[str, Any]:
         """
-        Parse the analysis string and return a dict with structured data.
+        Parse an analysis string into a structured dict.
 
         Parameters
         ----------
-
-        - analysis : The analysis string
+        analysis : str
+            Raw SFST analysis string of the form ``root<tag1><tag2>...``.
 
         Returns
         -------
-        Dictionary with the following structure
-        ```
-        {
-            morphemes: [
-                {root:"rootword1", pos:[pos1, pos2] }
-                {root:"rootword2", pos:[pos1, pos2] }
-            ]
-            weight: 200
-        }
-        ```
+        dict[str, Any]
+            Dictionary with keys:
+
+            - ``morphemes``: list of dicts, each with ``root`` (str) and
+              ``pos`` (list[str]).
+            - ``weight``: int, lower is better.
+
+        Raises
+        ------
+        ValueError
+            If the analysis string cannot be parsed.
         """
-        result = {}
+        result: dict[str, Any] = {}
         if analysis is None:
             return result
 
@@ -103,7 +98,7 @@ class Analyser:
         roots = match.captures("root")
         morphemes = []
         for rindex in range(len(roots)):
-            morpheme = {}
+            morpheme: dict[str, Any] = {}
             morpheme["root"] = roots[rindex]
             tags = match.captures("tags")[rindex]
             morpheme["pos"] = Analyser.POS_REGEX.match(tags).captures("tag")
@@ -114,42 +109,55 @@ class Analyser:
         return result
 
     @staticmethod
-    def get_weight(analysis: List[dict[str, Any]]) -> int:
-        """Analysis with less weight is the best analysis."""
+    def get_weight(analysis: list[dict[str, Any]]) -> int:
+        """
+        Compute a preference weight for an analysis; lower is better.
+
+        Parameters
+        ----------
+        analysis : list[dict[str, Any]]
+            List of morpheme dicts as returned by ``parse_analysis``.
+
+        Returns
+        -------
+        int
+            Composite weight based on morpheme count, POS tags, and root length.
+        """
         morpheme_length = len(analysis)
         weight = morpheme_length * 100
         for i in range(morpheme_length):
             pos = analysis[i]["pos"]
             root = analysis[i]["root"]
             for j in range(len(pos)):
-                # In general, favor simplicity
-                # Prefer analysis with less number of tags
-                # Prefer analysis with small length roots
                 weight += len(pos) * 5 + len(root) * 2 + Analyser.get_pos_weight(pos[j]) * 3
         return weight
 
     @staticmethod
     def get_pos_weight(pos: str) -> int:
         """
-        Get the relative weight of a pos tag.
-        Less weight is the preferred pos tag.
+        Return the relative preference weight for a POS tag.
+
+        Parameters
+        ----------
+        pos : str
+            POS tag string (e.g. ``"v"``, ``"n"``, ``"np"``).
+
+        Returns
+        -------
+        int
+            Lower weight indicates a preferred POS tag. Falls back to tag length.
         """
         WEIGHTS = {
-            # Prefer verbs than nouns
             "v": 1,
             "n": 2,
-            # Among three letter codes, prefer adv. Then adj, Then pronoun
             "adv": 3,
             "adj": 4,
             "coordinative": 4,
             "v-n-compound": 4,
             "prn": 5,
-            # Favor cvb-adv-part-past മുൻവിനയെച്ചം without using its length
             "past": 4,
             "cvb-adv-part-past": 5,
-            # Proper noun has high cost
             "np": 5,
             "fw": 1,
         }
-        # Use the WEIGHTS or fallback to length
         return WEIGHTS.get(pos, len(pos))

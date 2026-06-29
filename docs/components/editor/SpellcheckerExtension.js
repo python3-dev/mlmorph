@@ -1,9 +1,8 @@
 import { Extension } from '@tiptap/core'
 import { Plugin } from 'prosemirror-state'
 import { Decoration, DecorationSet } from "prosemirror-view";
-import axios from "axios";
 
-const wordsRegex = /[a-zA-Z\u0D00-\u0D7F\.\?\!]+/gi;
+const wordsRegex = /[a-zA-Zഀ-ൿ\.\?\!]+/gi;
 
 function debounce(func, timeout = 100) {
   let timer;
@@ -22,35 +21,31 @@ function fixSpelling(replacement) {
   }
 }
 
-const spellcheck = (text) => {
+const spellcheck = async (text) => {
   const misspellings = {};
-  const api = `/api/spellcheck`;
-  return axios
-    .post(api, { text: text })
-    .then((response) => {
-      const results = response.data;
-
-      Object.keys(results).forEach((word) => {
-        if (word.trim() && !results[word].correct) {
-          misspellings[word] = results[word].suggestions || [];
-        }
-      });
-      return misspellings;
-    })
-    .catch((error) => {
-      // eslint-disable-next-line no-console
-      console.log(error);
+  try {
+    const response = await fetch("/api/spellcheck", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
     });
+    const results = await response.json();
+    Object.keys(results).forEach((word) => {
+      if (word.trim() && !results[word].correct) {
+        misspellings[word] = results[word].suggestions || [];
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+  return misspellings;
 };
 
 function checkNodes(node, pos) {
   let result = [];
-  // For each node in the document
   if (node.isText) {
-    // Scan text nodes for suspicious patterns
-    let m;
-
     return spellcheck(node.text).then((misspellings) => {
+      let m;
       while ((m = wordsRegex.exec(node.text))) {
         let word = m[0];
         if (misspellings[word]) {
@@ -112,7 +107,6 @@ export const Spellchecker = Extension.create({
           return {
             update: debounce((view, lastState) => {
               let state = view.state;
-              // Don't do anything if the document/selection didn't change
               if (lastState && lastState.doc.eq(state.doc)) return;
               spellcheckDeco(view);
             }),
@@ -187,4 +181,3 @@ export const Spellchecker = Extension.create({
     ]
   },
 })
-
